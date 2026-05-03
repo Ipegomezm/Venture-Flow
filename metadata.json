@@ -1,0 +1,6 @@
+{
+  "name": "VentureFlow AI",
+  "description": "An entrepreneurial workspace for drafting, refining, and visualizing business ideas using Gemini AI.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["AI Content Generation", "Business Strategy Synthesis", "Brand Visualization"]
+}
