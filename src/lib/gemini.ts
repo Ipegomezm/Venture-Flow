@@ -46,6 +46,49 @@ export async function generateBusinessIdea(prompt: string): Promise<BusinessIdea
   return JSON.parse(response.text.trim());
 }
 
+export interface CrushingAnalysis {
+  brutalHonesty: string;
+  technicalMoats: string[];
+  marketKillers: string[];
+  financialPains: string[];
+  executionDifficulty: number; // 1-100
+}
+
+export async function crushIdea(title: string, prompt: string): Promise<CrushingAnalysis> {
+  const response = await ai.models.generateContent({
+    model: "gemini-3-flash-preview",
+    contents: `Brutally analyze and 'crush' this business idea: '${title}'. Context: ${prompt}`,
+    config: {
+      systemInstruction: "You are a cynical, highly experienced venture capitalist and technical architect. Your job is to find every single reason why this business will FAIL. Be brutal, realistic, and focus on technical complexity, market saturation, and operational nightmares. Do not give any praise. Focus on what is EXTREMELY difficult to do.",
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: Type.OBJECT,
+        properties: {
+          brutalHonesty: { type: Type.STRING },
+          technicalMoats: { 
+            type: Type.ARRAY, 
+            items: { type: Type.STRING },
+            description: "The hardest technical things to build that could bankrupt the project."
+          },
+          marketKillers: { 
+            type: Type.ARRAY, 
+            items: { type: Type.STRING },
+            description: "Market forces or competitors that will destroy this."
+          },
+          financialPains: { 
+            type: Type.ARRAY, 
+            items: { type: Type.STRING },
+            description: "Where the money will vanish."
+          },
+          executionDifficulty: { type: Type.NUMBER }
+        },
+        required: ["brutalHonesty", "technicalMoats", "marketKillers", "financialPains", "executionDifficulty"]
+      }
+    }
+  });
+
+  return JSON.parse(response.text.trim());
+}
 export async function generateBrandImage(title: string, oneLiner: string): Promise<string> {
   const response = await ai.models.generateContent({
     model: "gemini-2.5-flash-image",

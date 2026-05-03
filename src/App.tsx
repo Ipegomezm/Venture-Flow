@@ -10,31 +10,56 @@ import {
   Sparkles, 
   RefreshCw,
   Globe,
-  Palette
+  Palette,
+  Skull,
+  Bomb,
+  Zap,
+  Gauge
 } from 'lucide-react';
-import { generateBusinessIdea, generateBrandImage, type BusinessIdea } from './lib/gemini';
+import { 
+  generateBusinessIdea, 
+  generateBrandImage, 
+  crushIdea,
+  type BusinessIdea, 
+  type CrushingAnalysis 
+} from './lib/gemini';
 
 export default function App() {
   const [prompt, setPrompt] = useState('');
   const [loading, setLoading] = useState(false);
+  const [crushing, setCrushing] = useState(false);
   const [idea, setIdea] = useState<BusinessIdea | null>(null);
+  const [crushData, setCrushData] = useState<CrushingAnalysis | null>(null);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
 
   const handleGenerate = async () => {
     if (!prompt.trim()) return;
     setLoading(true);
     setIdea(null);
+    setCrushData(null);
     setImageUrl(null);
     try {
       const result = await generateBusinessIdea(prompt);
       setIdea(result);
-      // Generate image
       const img = await generateBrandImage(result.title, result.oneLiner);
       setImageUrl(img);
     } catch (error) {
       console.error("Analysis failed:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCrush = async () => {
+    if (!idea) return;
+    setCrushing(true);
+    try {
+      const result = await crushIdea(idea.title, prompt);
+      setCrushData(result);
+    } catch (error) {
+      console.error("Crush operation failed:", error);
+    } finally {
+      setCrushing(false);
     }
   };
 
@@ -181,9 +206,12 @@ export default function App() {
                       ))}
                     </ul>
                    </div>
-                   <div className="bg-black text-white p-6 rounded-3xl shadow-xl">
+                <div className="bg-black text-white p-6 rounded-3xl shadow-xl relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-4 opacity-10">
+                      <Zap size={80} />
+                    </div>
                     <h4 className="text-[11px] font-mono uppercase tracking-widest text-white/40 font-bold mb-4">Immediate Actions</h4>
-                    <ul className="space-y-3">
+                    <ul className="space-y-3 mb-6 relative z-10">
                       {idea.nextSteps.map((step, index) => (
                         <li key={index} className="flex gap-3 text-sm items-start">
                           <div className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center text-[10px] shrink-0">
@@ -193,7 +221,102 @@ export default function App() {
                         </li>
                       ))}
                     </ul>
-                   </div>
+                    
+                    {!crushData && !crushing && (
+                      <button
+                        onClick={handleCrush}
+                        className="w-full py-4 bg-red-600 hover:bg-red-700 text-white rounded-2xl font-bold flex items-center justify-center gap-3 transition-all shadow-[0_0_20px_rgba(220,38,38,0.3)] animate-pulse"
+                      >
+                        <Skull size={20} />
+                        <span>CRUSH THIS IDEA</span>
+                      </button>
+                    )}
+                    {crushing && (
+                      <div className="w-full py-4 bg-red-900/50 text-white rounded-2xl font-bold flex items-center justify-center gap-3 border border-red-700">
+                        <RefreshCw className="animate-spin" size={20} />
+                        <span className="uppercase tracking-widest text-xs">Simulating Reality...</span>
+                      </div>
+                    )}
+                </div>
+
+                {/* CRUSH DATA DISPLAY */}
+                <AnimatePresence>
+                  {crushData && (
+                    <motion.div
+                      initial={{ scale: 0.95, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      className="md:col-span-2 bg-[#1a1a1a] text-white p-10 rounded-[40px] border-4 border-red-600 shadow-[20px_20px_0_rgba(220,38,38,0.2)]"
+                    >
+                      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
+                        <div>
+                          <div className="flex items-center gap-3 text-red-500 mb-2">
+                            <Bomb size={32} />
+                            <h4 className="text-4xl font-black italic tracking-tighter uppercase">Brutal Reality Check</h4>
+                          </div>
+                          <p className="text-white/40 font-mono text-xs uppercase tracking-[0.3em]">Cynical VC Mode: Activated</p>
+                        </div>
+                        <div className="bg-red-600/10 border border-red-600/30 p-4 rounded-2xl flex items-center gap-4">
+                          <div className="text-right">
+                            <div className="text-[10px] font-mono text-red-400 uppercase tracking-widest">Failure Probability</div>
+                            <div className="text-3xl font-black text-red-500">{crushData.executionDifficulty}%</div>
+                          </div>
+                          <Gauge size={40} className="text-red-500" />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                        <div className="space-y-8">
+                          <div>
+                            <h5 className="text-red-500 font-mono text-xs uppercase tracking-widest mb-4 flex items-center gap-2">
+                              <span className="w-2 h-2 bg-red-500 rounded-full animate-ping" />
+                              The Brutal Honest Truth
+                            </h5>
+                            <p className="text-xl font-light leading-relaxed text-white/80 border-l-2 border-red-600/30 pl-6 italic">
+                              "{crushData.brutalHonesty}"
+                            </p>
+                          </div>
+                          
+                          <div>
+                            <h5 className="text-white/30 font-mono text-xs uppercase tracking-widest mb-4">Technical Nightmares</h5>
+                            <ul className="space-y-4">
+                              {crushData.technicalMoats.map((moat, i) => (
+                                <li key={i} className="flex gap-4 items-start group">
+                                  <div className="mt-1.5 w-1.5 h-1.5 bg-red-500 rounded-full shrink-0 group-hover:scale-150 transition-transform" />
+                                  <span className="text-sm text-white/70 leading-relaxed font-medium">{moat}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        </div>
+
+                        <div className="space-y-8">
+                          <div className="bg-red-600/5 p-6 rounded-3xl border border-red-600/10 hover:border-red-600/30 transition-colors">
+                            <h5 className="text-red-400 font-mono text-xs uppercase tracking-widest mb-4">Market Killers</h5>
+                            <div className="flex flex-wrap gap-2">
+                              {crushData.marketKillers.map((killer, i) => (
+                                <span key={i} className="px-3 py-1.5 bg-red-600/10 rounded-full text-xs text-red-100 border border-red-600/20">
+                                  {killer}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div className="bg-white/5 p-6 rounded-3xl border border-white/5">
+                            <h5 className="text-white/30 font-mono text-xs uppercase tracking-widest mb-4">The "Money Pit"</h5>
+                            <ul className="space-y-3">
+                              {crushData.financialPains.map((pain, i) => (
+                                <li key={i} className="text-sm flex justify-between items-center border-b border-white/5 pb-2">
+                                  <span className="text-white/60">{pain}</span>
+                                  <DollarSign size={14} className="text-red-500" />
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
                 </div>
               </div>
 
